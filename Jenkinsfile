@@ -1,35 +1,64 @@
 pipeline {
     agent any
-    tools {
-        nodejs 'NodeJS' // Name of your NodeJS installation in Jenkins
+
+    environment {
+        NODE_VERSION = '14' // Specify the Node.js version you want
     }
+
     stages {
-        stage('Checkout') {
+        stage('Clone Repository') {
             steps {
-                // Checkout the code from GitHub
-                git url: 'https://github.com/imrithwik1908/my_node_app',
-                    branch: 'master'
+                echo 'Cloning the repository...'
+                // Git checkout will happen automatically due to the SCM configuration in Jenkins
+            }
+        }
+        stage('Install NVM and Node.js') {
+            steps {
+                echo 'Installing NVM and setting up Node.js...'
+                sh '''
+                    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
+                    export NVM_DIR="$HOME/.nvm"
+                    . "$NVM_DIR/nvm.sh"
+                    nvm install $NODE_VERSION
+                    nvm alias default $NODE_VERSION
+                '''
             }
         }
         stage('Install Dependencies') {
             steps {
-                // Install Node.js dependencies
-                sh 'npm install'
+                echo 'Installing project dependencies...'
+                sh '''
+                    export NVM_DIR="$HOME/.nvm"
+                    . "$NVM_DIR/nvm.sh"
+                    npm install
+                '''
             }
         }
-        stage('Run Application') {
+        stage('Run Tests') {
             steps {
-                // Run the application (optional)
-                sh 'node app.js &'
+                echo 'Running tests...'
+                sh '''
+                    export NVM_DIR="$HOME/.nvm"
+                    . "$NVM_DIR/nvm.sh"
+                    npm test
+                '''
+            }
+        }
+        stage('Deploy') {
+            steps {
+                echo 'Deploying the application...'
+                // Add your deployment commands here, for example:
+                // sh 'npm run deploy'
             }
         }
     }
+
     post {
         success {
-            echo 'Build was successful!'
+            echo 'Pipeline completed successfully!'
         }
         failure {
-            echo 'Build failed!'
+            echo 'Pipeline failed. Check the logs for details.'
         }
     }
 }
